@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHOST_PROTOCOL // TERMINAL</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- CORE VARIABLES --- */
+        :root {
+            --neon-green: #0f0;
+            --neon-dim: rgba(0, 255, 0, 0.3);
+            --bg-black: #050505;
+            --panel-bg: rgba(10, 20, 10, 0.95);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-black);
+            color: var(--neon-green);
+            font-family: 'Share Tech Mono', monospace;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px; /* For 3D effects */
+        }
+
+        /* --- 1. THE MOVING GRID BACKGROUND (Visual Upgrade) --- */
+        .cyber-grid {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            bottom: -50%;
+            left: -50%;
+            background-image: 
+                linear-gradient(var(--neon-dim) 1px, transparent 1px),
+                linear-gradient(90deg, var(--neon-dim) 1px, transparent 1px);
+            background-size: 50px 50px;
+            transform: rotateX(45deg); /* Tilts the floor */
+            animation: gridMove 10s linear infinite;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        @keyframes gridMove {
+            0% { transform: rotateX(45deg) translateY(0); }
+            100% { transform: rotateX(45deg) translateY(50px); }
+        }
+
+        /* --- 2. LANDING PAGE --- */
+        #landing-page {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: black; /* Solid black to cover the app */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .glitch-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 4rem;
+            text-shadow: 2px 2px #f0f, -2px -2px #0ff;
+            animation: glitch 2s infinite;
+        }
+
+        .enter-btn {
+            margin-top: 40px;
+            background: transparent;
+            border: 2px solid var(--neon-green);
+            color: var(--neon-green);
+            padding: 15px 50px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            box-shadow: 0 0 15px var(--neon-green);
+            transition: all 0.2s;
+        }
+        .enter-btn:hover { background: var(--neon-green); color: black; box-shadow: 0 0 40px var(--neon-green); }
+
+        /* --- 3. MAIN CONTAINER --- */
+        .container {
+            width: 900px;
+            height: 650px;
+            background: var(--panel-bg);
+            border: 2px solid var(--neon-green);
+            box-shadow: 0 0 30px var(--neon-dim);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            opacity: 0;
+            transform: scale(0.9) translateY(50px);
+            transition: all 0.5s ease;
+        }
+
+        .app-visible { opacity: 1; transform: scale(1) translateY(0); }
+
+        /* --- NAVIGATION HEADER --- */
+        .nav-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--neon-green);
+            background: rgba(0, 255, 0, 0.05);
+        }
+
+        .back-btn {
+            background: transparent;
+            border: 1px solid #ff4444;
+            color: #ff4444;
+            padding: 5px 15px;
+            cursor: pointer;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.9rem;
+        }
+        .back-btn:hover { background: #ff4444; color: black; }
+
+        /* --- UI ELEMENTS --- */
+        input {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--neon-green);
+            color: white;
+            padding: 15px;
+            width: 100%;
+            margin-bottom: 15px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1.1rem;
+        }
+        input:focus { outline: none; box-shadow: 0 0 10px var(--neon-green); }
+
+        button.action-btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--neon-green);
+            color: black;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+        }
+        button.action-btn:hover { background: white; }
+
+        /* --- CHAT AREA --- */
+        #chat-screen { height: 100%; display: flex; flex-direction: column; }
+
+        #messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* --- MESSAGES --- */
+        .message-box {
+            padding: 10px 15px;
+            border: 1px solid var(--neon-green);
+            background: rgba(0, 0, 0, 0.6);
+            max-width: 80%;
+            position: relative;
+            word-wrap: break-word; /* Prevents long text from breaking layout */
+        }
+        /* The "Tech Corner" effect */
+        .message-box::before {
+            content: ''; position: absolute; top: -1px; left: -1px; width: 8px; height: 8px; background: var(--neon-green);
+        }
+
+        .my-message { align-self: flex-end; border-color: var(--neon-green); text-align: right; }
+        .other-message { align-self: flex-start; border-color: #0ff; color: #0ff; }
+        .other-message::before { background: #0ff; }
+
+        .system-message { align-self: center; color: #f0f; border: 1px dashed #f0f; padding: 5px 10px; font-size: 0.8rem; background: transparent; }
+
+        .timestamp {
+            font-size: 0.6rem;
+            opacity: 0.7;
+            margin-top: 5px;
+            display: block;
+        }
+
+        /* --- UTILS --- */
+        .hidden { display: none !important; }
+
+        @keyframes glitch {
+            0% { text-shadow: 2px 2px #f0f, -2px -2px #0ff; }
+            50% { text-shadow: -2px 2px #0ff, 2px -2px #f0f; }
+            100% { text-shadow: 2px 2px #f0f, -2px -2px #0ff; }
+        }
+        /* --- MOBILE RESPONSIVENESS (The "Field Agent" View) --- */
+        @media (max-width: 768px) {
+
+            /* 1. Make the Container Full Screen */
+            .container {
+                width: 100%;
+                height: 100%; /* Fill the whole phone screen */
+                border: none; /* Remove border on mobile for cleaner look */
+                box-shadow: none;
+            }
+
+            /* 2. Resize Big Text */
+            .glitch-text {
+                font-size: 2.5rem; /* Smaller title so it fits */
+                text-align: center;
+                padding: 0 20px;
+            }
+
+            /* 3. Make Inputs & Buttons Finger-Friendly */
+            input, button.action-btn {
+                padding: 15px; /* Bigger touch area */
+                font-size: 1rem; /* Readable text */
+            }
+
+            /* 4. Adjust the Login Screen Layout */
+            #login-screen {
+                padding: 20px;
+                justify-content: center;
+            }
+
+            /* 5. Chat Area Adjustments */
+            .message-box {
+                max-width: 90%; /* Let messages take up more width */
+            }
+
+            .back-btn {
+                font-size: 0.8rem;
+                padding: 5px 10px;
+            }
+
+            /* 6. Hide the Moving Grid on Phone (Saves Battery/Performance) */
+            .cyber-grid {
+                display: none; 
+            }
+
+            /* Add a simple static background instead */
+            body {
+                background: linear-gradient(to bottom, #000, #111);
+            }
+        }
+
+        /* --- TYPING INDICATOR --- */
+        #typing-indicator {
+            font-size: 0.8rem;
+            color: var(--neon-green);
+            font-style: italic;
+            margin-left: 20px;
+            margin-bottom: 5px;
+            height: 20px; /* Keep space even when empty so layout doesn't jump */
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #typing-indicator.active {
+            opacity: 1;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="cyber-grid"></div>
+
+    <div id="landing-page">
+        <div class="glitch-text">GHOST_PROTOCOL</div>
+        <p style="letter-spacing: 5px; margin-top: 10px;">ENCRYPTED CHANNEL V1.0</p>
+        <button class="enter-btn" onclick="enterApp()">[ JACK IN ]</button>
+    </div>
+
+    <div class="container" id="main-app">
+
+        <div id="login-screen" style="padding: 40px; height: 100%; display: flex; flex-direction: column; justify-content: center;">
+            <div style="position: absolute; top: 20px; left: 20px;">
+                <button class="back-btn" onclick="exitApp()">[ < ABORT ]</button>
+            </div>
+
+            <h2 style="text-align: center; border-bottom: 1px solid var(--neon-green); padding-bottom: 10px; margin-bottom: 30px;">AUTHENTICATE</h2>
+
+            <input type="text" id="room-code" placeholder="ENTER ROOM CODE">
+            <input type="password" id="password" placeholder="ENTER PASSWORD">
+            <button class="action-btn" onclick="joinRoom()">ACCESS NODE</button>
+
+            <div style="text-align: center; margin: 30px 0; color: #555;">--- OR ---</div>
+
+            <input type="password" id="create-password" placeholder="SET ADMIN PASSWORD">
+            <button class="action-btn" style="background: transparent; border: 1px solid var(--neon-green); color: var(--neon-green);" onclick="createRoom()">GENERATE NEW NODE</button>
+
+            <div id="credentials-display" class="hidden" style="margin-top: 20px; border: 1px solid #f0f; padding: 15px; background: rgba(50, 0, 50, 0.3);">
+                <p style="color: #f0f; font-weight: bold;">>> NODE CREATED <<</p>
+                <p>CODE: <span id="display-code" style="color: white; font-size: 1.2rem;"></span></p>
+                <p>PASS: <span id="display-pass" style="color: white; font-size: 1.2rem;"></span></p>
+            </div>
+        </div>
+
+        <div id="chat-screen" class="hidden">
+            <div class="nav-header">
+                <span>SECURE_LINK: <span id="room-name-display" style="color: white;"></span></span>
+                <button class="back-btn" onclick="leaveRoom()">[ DISCONNECT ]</button>
+            </div>
+
+            <div id="messages"></div>
+            <div id="typing-indicator">Remote Agent is encoding data...</div>
+
+            <div style="padding: 20px; background: rgba(0,0,0,0.5); display: flex; border-top: 1px solid var(--neon-green); align-items: center;">
+
+                <input type="file" id="file-input" accept="image/*" style="display: none;" onchange="handleFileUpload()">
+
+                <button onclick="document.getElementById('file-input').click()" style="background: transparent; border: 1px solid var(--neon-green); color: var(--neon-green); width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; cursor: pointer; font-size: 1.2rem;">
+                    📎
+                </button>
+
+                <input type="text" id="message-input" placeholder="INPUT DATA..." style="margin: 0; margin-right: 10px; flex-grow: 1;">
+
+                <button class="action-btn" style="width: 80px; margin: 0;" onclick="sendMessage()">TX</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+
+        // --- ENCRYPTION HELPERS ---
+        // We use the Room Password as the Key
+        function encryptMessage(text) {
+            const password = document.getElementById('password').value || document.getElementById('display-pass').innerText;
+            if (!password) return text; // Fallback if no pass found
+            return CryptoJS.AES.encrypt(text, password).toString();
+        }
+
+        function decryptMessage(cipherText) {
+            const password = document.getElementById('password').value || document.getElementById('display-pass').innerText;
+            if (!password) return cipherText;
+            try {
+                const bytes = CryptoJS.AES.decrypt(cipherText, password);
+                const originalText = bytes.toString(CryptoJS.enc.Utf8);
+                return originalText || cipherText; // Return original if decrypt works, else return raw text
+            } catch (e) {
+                return cipherText; // If decryption fails, show the garbled text
+            }
+        }
+
+        const socket = io();
+
+        // --- 1. GENERATE PERMANENT IDENTITY ---
+        // Check if we already have an ID. If not, make one.
+        let myAgentId = localStorage.getItem('agent_id');
+        if (!myAgentId) {
+            myAgentId = "AGENT_" + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('agent_id', myAgentId);
+        }
+        console.log("MY IDENTITY:", myAgentId);
+
+        // --- NAVIGATION LOGIC ---
+        function enterApp() {
+            document.getElementById('landing-page').style.transform = "translateY(-100%)";
+            setTimeout(() => { document.getElementById('main-app').classList.add('app-visible'); }, 300);
+        }
+
+        function exitApp() {
+            document.getElementById('landing-page').style.transform = "translateY(0)";
+            document.getElementById('main-app').classList.remove('app-visible');
+        }
+
+        function leaveRoom() { location.reload(); }
+
+        // --- CHAT LOGIC ---
+        function createRoom() {
+            const pass = document.getElementById('create-password').value;
+            if(!pass) { alert("PASSWORD REQUIRED"); return; }
+            socket.emit('create_room', { password: pass });
+        }
+
+        socket.on('room_created', (data) => {
+            document.getElementById('credentials-display').classList.remove('hidden');
+            document.getElementById('display-code').innerText = data.roomCode;
+            document.getElementById('display-pass').innerText = data.password;
+            document.getElementById('room-code').value = data.roomCode;
+            document.getElementById('password').value = data.password;
+        });
+
+        function joinRoom() {
+            const room = document.getElementById('room-code').value;
+            const pass = document.getElementById('password').value;
+            socket.emit('join_room', { room: room, pass: pass });
+        }
+
+        socket.on('join_success', (roomCode) => {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('chat-screen').classList.remove('hidden');
+            document.getElementById('room-name-display').innerText = roomCode;
+        });
+
+        socket.on('error_message', (msg) => { alert("ACCESS DENIED: " + msg); });
+
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const msg = input.value;
+            const room = document.getElementById('room-name-display').innerText;
+
+            if(msg) {
+                // ENCRYPT BEFORE SENDING
+                const encryptedMsg = encryptMessage(msg);
+
+                socket.emit('send_message', { 
+                    room: room, 
+                    message: encryptedMsg, // <--- Send the scrambled code
+                    senderId: myAgentId 
+                });
+                input.value = "";
+            }
+        }
+
+        // --- TYPING LOGIC ---
+        const messageInput = document.getElementById('message-input');
+        let typingTimeout;
+
+        messageInput.addEventListener('input', () => {
+            const room = document.getElementById('room-name-display').innerText;
+            socket.emit('typing', { room: room });
+        });
+
+        socket.on('display_typing', (data) => {
+            // Only show if it's NOT me typing
+            if (data.senderId !== myAgentId) {
+                const indicator = document.getElementById('typing-indicator');
+                indicator.classList.add('active'); // Turn ON visuals
+                
+                // Clear existing timer to prevent flickering
+                clearTimeout(typingTimeout);
+                
+                // Turn OFF visuals after 1 second of silence
+                typingTimeout = setTimeout(() => {
+                    indicator.classList.remove('active');
+                }, 1000);
+            }
+        });
+
+        socket.on('receive_message', (data) => {
+            console.log("Received Data:", data); // Debug: See what arrives
+
+            const chatBox = document.getElementById('messages');
+            const div = document.createElement('div');
+
+            // 1. Decrypt (ENABLED NOW)
+            let content = data.text;
+            if (data.senderId !== "SYSTEM") {
+                // FIXED: Now we actually use the decryption!
+                content = decryptMessage(data.text);
+            }
+
+            // 2. CHECK: Is it an Image?
+            // We check if it starts with "IMG:" OR if it looks like a raw data URL
+            if (content.startsWith("IMG:")) {
+                console.log("Render Mode: IMAGE");
+
+                const img = document.createElement('img');
+                img.src = content.substring(4); // Remove "IMG:"
+                img.style.maxWidth = "200px"; // Limit size so it doesn't break chat
+                img.style.borderRadius = "10px";
+                img.style.border = "2px solid var(--neon-green)";
+
+                div.appendChild(img);
+
+            } else {
+                console.log("Render Mode: TEXT");
+                const text = document.createElement('div');
+                text.innerText = content;
+                div.appendChild(text);
+            }
+
+            // 3. Add Time (FIXED: Uses Local Phone Time)
+            const time = document.createElement('span');
+            // We use YOUR local clock instead of the server clock
+            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            time.innerText = now;
+            time.classList.add('timestamp'); 
+            div.appendChild(time);
+
+            // 4. Assign Classes
+            if (data.senderId === "SYSTEM") {
+                div.className = "system-message";
+            } else if (data.senderId === myAgentId) {
+                div.className = "message-box my-message";
+            } else {
+                div.className = "message-box other-message";
+            }
+
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+
+        function handleFileUpload() {
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+
+                // When the file is read...
+                reader.onload = function(e) {
+                    const base64Image = e.target.result; // This is the image as a long string
+
+                    // We send it just like a text message, but with a special prefix
+                    // We also ENCRYPT the image data so even photos are secure!
+                    const room = document.getElementById('room-name-display').innerText;
+
+                    // Prefix with "IMG:" so we know it's an image
+                    const encryptedImg = encryptMessage("IMG:" + base64Image);
+
+                    socket.emit('send_message', {
+                        room: room,
+                        message: encryptedImg,
+                        senderId: myAgentId
+                    });
+                };
+
+                // Read the file
+                reader.readAsDataURL(file);
+            }
+            // Reset input so you can select the same file again
+            fileInput.value = ''; 
+        }
+    </script>
+</body>
+</html>
